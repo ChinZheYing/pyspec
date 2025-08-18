@@ -17,7 +17,9 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testext", title = "Select a File", filetypes = (("CSV files","*.txt*"), ("all files", "*.*")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("CSV files","*.csv*"), ("all files", "*.*")))
+
+
 
 
 raw_files = []
@@ -97,6 +99,7 @@ def open_import_raw_trend_window(Master):
 
 
 
+
 trans_files = []
 ext_files = []
 def import_trans(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip):
@@ -113,7 +116,6 @@ def plot_trans(Master):
     plot = fig.add_subplot(1,1,1)
     delim = ','
     
-    print(trans_files)
     for file in trans_files:
         if file['delimiter'] == 'comma':
             delim = ','
@@ -126,7 +128,6 @@ def plot_trans(Master):
 
             # return (spectra - bg) / ((ref - bg) * spectraOverRefFactor)
         T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int'])
-        print(T)
 
         plot.plot(df_spec['x'], T['y'],label=file['legend'])
 
@@ -257,6 +258,71 @@ def open_import_trans_trend_window(Master,mode):
     import_btn.grid(column=4,row=8,columnspan=1,rowspan=1,sticky='nsew')
 
     configGridDim(top,7,8)
+
+
+# Function called when a checkbox is clicked
+def on_checkbox_change(checkbox_value, checkbox_var):
+#    print(f"Checkbox {checkbox_value} is {'checked' if checkbox_var.get() else 'unchecked'}")
+    pass
+   
+# Function to create multiple checkboxes using a loop
+def create_checkboxes(root, files):
+   checkboxes = []  # List to store BooleanVar objects for each checkbox
+
+   # Loop to create checkboxes dynamically
+   for i in range(len(files)):
+      checkbox_var = tk.BooleanVar()  # Variable to track the state of the checkbox
+      checkbox = tk.Checkbutton(
+         root,
+         text=files[i]['legend'],
+         variable=checkbox_var,
+         command=lambda i=i, var=checkbox_var: on_checkbox_change(i+1, var)
+      )
+      checkbox.pack()  # Place the checkbox in the window
+      checkboxes.append(checkbox_var)  # Add the variable to the list
+
+   return checkboxes  # Return the list of checkbox variables
+
+def remove_files(destroy,checkboxes,mode):
+    global raw_files
+    global trans_files
+    global ext_files
+    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files}
+
+    list_of_state = [i.get() for i in checkboxes]
+    idx_to_del = []
+    for i in range(len(list_of_state)):
+        if list_of_state[i] == True:
+            idx_to_del.append(i)
+
+    new_files = [e for i, e in enumerate(files_from_mode[mode]) if i not in idx_to_del]
+
+    if mode == 'raw':
+        raw_files = new_files
+        plot_raws(raw_tab)
+    elif mode == 'trans':
+        trans_files = new_files
+        plot_trans(trans_tab)
+    elif mode == 'ext':
+        ext_files = new_files
+        plot_ext(ext_tab)
+
+    destroy.destroy()
+
+    
+def open_remove_trend_window(Master,mode):
+    global raw_files
+    global trans_files
+    global ext_files
+    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files}
+
+    top= Toplevel(Master)
+    top.geometry("800x300")
+    top.title("Remove Trend")
+
+    checkboxes = create_checkboxes(top,files_from_mode[mode])
+    remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode),width=13)
+    remove_btn.pack()
    
 
 
@@ -285,6 +351,8 @@ tabControl.pack(expand = 1, fill ="both")
 raw_menubar = ttk.Frame(raw_tab)
 raw_import_btn = Button(raw_menubar,text='Import',command=lambda: open_import_raw_trend_window(raw_tab),width=13)
 raw_import_btn.pack(side = LEFT,padx=2)
+raw_remove_btn = Button(raw_menubar,text='Remove',command=lambda: open_remove_trend_window(raw_tab,'raw'),width=13)
+raw_remove_btn.pack(side = LEFT,padx=2)
 raw_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(raw_tab,10,17)
 
@@ -293,6 +361,8 @@ configGridDim(raw_tab,10,17)
 trans_menubar = ttk.Frame(trans_tab)
 trans_import_btn = Button(trans_menubar,text='Import',command=lambda: open_import_trans_trend_window(trans_tab,'trans'),width=13)
 trans_import_btn.pack(side = LEFT,padx=2)
+trans_remove_btn = Button(trans_menubar,text='Remove',command=lambda: open_remove_trend_window(trans_tab,'trans'),width=13)
+trans_remove_btn.pack(side = LEFT,padx=2)
 trans_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(trans_tab,10,17)
 
@@ -300,9 +370,10 @@ configGridDim(trans_tab,10,17)
 ext_menubar = ttk.Frame(ext_tab)
 ext_import_btn = Button(ext_menubar,text='Import',command=lambda: open_import_trans_trend_window(ext_tab,'ext'),width=13)
 ext_import_btn.pack(side = LEFT,padx=2)
+ext_remove_btn = Button(ext_menubar,text='Remove',command=lambda: open_remove_trend_window(ext_tab,'ext'),width=13)
+ext_remove_btn.pack(side = LEFT,padx=2)
 ext_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(ext_tab,10,17)
-
 
 
 window.mainloop()  
