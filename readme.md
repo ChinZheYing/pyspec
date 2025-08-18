@@ -1,6 +1,9 @@
 # Introduction
 This software is used to analyze spectrums, such as plotting transmission, extinction or process spectral series over time as videos. It also allows you to view multiple spectrums at the same time for side by side comparison, especially useful for applications such as metamaterials sensing.
 
+![alt text](images/image2.png)
+![alt text](images/image1.png)
+
 ## Raw
 This tab allows you to view simple raw spectrum data.
 
