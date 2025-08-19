@@ -425,6 +425,10 @@ tauc_import_btn = Button(tauc_menubar,text='Import',command=lambda: open_import_
 tauc_import_btn.pack(side = LEFT,padx=2)
 tauc_remove_btn = Button(tauc_menubar,text='Remove',command=lambda: open_remove_trend_window(tauc_tab,'tauc'),width=13)
 tauc_remove_btn.pack(side = LEFT,padx=2)
+tauc_add_fit_btn = Button(tauc_menubar,text='New Fit',command=None,width=13)
+tauc_add_fit_btn.pack(side = LEFT,padx=2)
+tauc_edit_fit_btn = Button(tauc_menubar,text='Edit Fit',command=None,width=13)
+tauc_edit_fit_btn.pack(side = LEFT,padx=2)
 tauc_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(tauc_tab,10,17)
 
