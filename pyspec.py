@@ -19,8 +19,7 @@ def configGridDim(frame,col,rw):
 def browseFiles(Master):
     return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
 
-
-
+graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
 
 raw_files = []
 
@@ -46,6 +45,9 @@ def plot_raws(Master):
         plot.plot(df['x'], df['y'],label=file['legend'])
 
     plot.legend()
+    plot.set_title(graph_settings['raw']['title'])
+    plot.set_xlabel(graph_settings['raw']['x axis title'])
+    plot.set_ylabel(graph_settings['raw']['y axis title'])
 
     canvas = FigureCanvasTkAgg(fig, master = Master)  
     canvas.draw()
@@ -134,6 +136,9 @@ def plot_trans(Master):
         plot.plot(df_spec['x'], T['y'],label=file['legend'])
 
     plot.legend()
+    plot.set_title(graph_settings['trans']['title'])
+    plot.set_xlabel(graph_settings['trans']['x axis title'])
+    plot.set_ylabel(graph_settings['trans']['y axis title'])
 
     canvas = FigureCanvasTkAgg(fig, master = Master)  
     canvas.draw()
@@ -170,6 +175,10 @@ def plot_ext(Master):
         plot.plot(df_spec['x'], alpha['y'],label=file['legend'])
 
     plot.legend()
+    plot.set_title(graph_settings['ext']['title'])
+    plot.set_xlabel(graph_settings['ext']['x axis title'])
+    plot.set_ylabel(graph_settings['ext']['y axis title'])
+
     canvas = FigureCanvasTkAgg(fig, master = Master)  
     canvas.draw()
     canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew',columnspan=10,rowspan=15)
@@ -216,6 +225,9 @@ def plot_tauc(Master):
             print(xintercept)
 
     plot.legend()
+    plot.set_title(graph_settings['tauc']['title'])
+    plot.set_xlabel(graph_settings['tauc']['x axis title'])
+    plot.set_ylabel(graph_settings['tauc']['y axis title'])
 
     canvas = FigureCanvasTkAgg(fig, master = Master)  
     canvas.draw()
@@ -376,6 +388,19 @@ def open_remove_trend_window(Master,mode):
     remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode),width=13)
     remove_btn.pack()
    
+def open_remove_trend_window(Master,mode):
+    global raw_files
+    global trans_files
+    global ext_files
+    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files,'tauc':tauc_files}
+
+    top= Toplevel(Master)
+    top.geometry("800x300")
+    top.title("Remove Trend")
+
+    checkboxes = create_checkboxes(top,files_from_mode[mode])
+    remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode),width=13)
+    remove_btn.pack()
 
 
 
