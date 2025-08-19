@@ -17,8 +17,8 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
-    # return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
+    # return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
 
 graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
 
