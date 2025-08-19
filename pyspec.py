@@ -183,7 +183,7 @@ def import_tauc(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refi
     global tauc_files
     if legend == '':
         legend = spectrum
-    tauc_files.append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip)})
+    tauc_files.append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip),'has fit range':False,'fit max':0,'fit min':0})
     plot_tauc(Master)
     destroy.destroy()
 
@@ -204,10 +204,16 @@ def plot_tauc(Master):
         df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
 
             # return (spectra - bg) / ((ref - bg) * spectraOverRefFactor)
+        energy = 1240/df_spec['x']
         alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
-        tauc = (alpha['y']*(1240/df_spec['x']))**2
-        print(tauc)
-        plot.plot(df_spec['x'], tauc,label=file['legend'])
+        tauc = (alpha['y']*(energy))**2
+        # print(tauc)
+        plot.plot(energy, tauc,label=file['legend'])
+
+        if (file['has fit range'] == True):
+            slope, yintercept = np.polyfit(energy[minidx:maxidx], tauc[minidx:maxidx], 1) 
+            xintercept = -yintercept/slope
+            print(xintercept)
 
     plot.legend()
 
@@ -329,7 +335,8 @@ def remove_files(destroy,checkboxes,mode):
     global raw_files
     global trans_files
     global ext_files
-    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files}
+    global tauc_files
+    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files,'tauc':tauc_files}
 
     list_of_state = [i.get() for i in checkboxes]
     idx_to_del = []
@@ -348,6 +355,9 @@ def remove_files(destroy,checkboxes,mode):
     elif mode == 'ext':
         ext_files = new_files
         plot_ext(ext_tab)
+    elif mode == 'tauc':
+        tauc_files = new_files
+        plot_tauc(tauc_tab)
 
     destroy.destroy()
 
@@ -356,7 +366,7 @@ def open_remove_trend_window(Master,mode):
     global raw_files
     global trans_files
     global ext_files
-    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files}
+    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files,'tauc':tauc_files}
 
     top= Toplevel(Master)
     top.geometry("800x300")
