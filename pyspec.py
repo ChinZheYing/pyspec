@@ -17,7 +17,8 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
+    # return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
 
 graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
 
@@ -106,103 +107,27 @@ def open_import_raw_trend_window(Master):
 
 trans_files = []
 ext_files = []
-def import_trans(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip):
-    global trans_files
-    if legend == '':
-        legend = spectrum
-    trans_files.append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip)})
-    plot_trans(Master)
-    destroy.destroy()
-
-def plot_trans(Master):
-    global trans_files
-    fig = Figure(figsize = (5, 5), dpi = 100)
-    plot = fig.add_subplot(1,1,1)
-    delim = ','
-    
-    for file in trans_files:
-        if file['delimiter'] == 'comma':
-            delim = ','
-        elif file['delimiter'] == 'whitespace':
-            delim = '\s+'
-        df_spec  = pd.read_csv(file['spectrum'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_spec_bg  = pd.read_csv(file['spectrum bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_ref  = pd.read_csv(file['ref'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-
-            # return (spectra - bg) / ((ref - bg) * spectraOverRefFactor)
-        T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int'])
-
-        plot.plot(df_spec['x'], T['y'],label=file['legend'])
-
-    plot.legend()
-    plot.set_title(graph_settings['trans']['title'])
-    plot.set_xlabel(graph_settings['trans']['x axis title'])
-    plot.set_ylabel(graph_settings['trans']['y axis title'])
-
-    canvas = FigureCanvasTkAgg(fig, master = Master)  
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew',columnspan=10,rowspan=15)
-    toolbarframe = Frame(master=Master)
-    toolbar = NavigationToolbar2Tk(canvas, toolbarframe)
-    toolbar.update()
-    toolbarframe.grid(row=16, column=0, sticky='nsew',columnspan=10)
-
-def import_ext(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip):
-    global ext_files
-    if legend == '':
-        legend = spectrum
-    ext_files.append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip)})
-    plot_ext(Master)
-    destroy.destroy()
-
-def plot_ext(Master):
-    global ext_files
-    fig = Figure(figsize = (5, 5), dpi = 100)
-    plot = fig.add_subplot(1,1,1)
-    delim = ','
-    for file in ext_files:
-        if file['delimiter'] == 'comma':
-            delim = ','
-        elif file['delimiter'] == 'whitespace':
-            delim = '\s+'
-        df_spec  = pd.read_csv(file['spectrum'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_spec_bg  = pd.read_csv(file['spectrum bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_ref  = pd.read_csv(file['ref'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-
-        alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
-        plot.plot(df_spec['x'], alpha['y'],label=file['legend'])
-
-    plot.legend()
-    plot.set_title(graph_settings['ext']['title'])
-    plot.set_xlabel(graph_settings['ext']['x axis title'])
-    plot.set_ylabel(graph_settings['ext']['y axis title'])
-
-    canvas = FigureCanvasTkAgg(fig, master = Master)  
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew',columnspan=10,rowspan=15)
-    toolbarframe = Frame(master=Master)
-    toolbar = NavigationToolbar2Tk(canvas, toolbarframe)
-    toolbar.update()
-    toolbarframe.grid(row=16, column=0, sticky='nsew',columnspan=10)
-
 tauc_files = []
-def import_tauc(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip):
-    global tauc_files
+files = {'trans':[],'ext':[],'tauc':[]}
+
+def import_trend(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip,mode):
+    global files
+
     if legend == '':
         legend = spectrum
-    tauc_files.append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip),'has fit range':False,'fit max':0,'fit min':0})
-    plot_tauc(Master)
+    files[mode].append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip),'has fit range':False,'fit max':0,'fit min':0})
+    plot_trend(Master,mode)
     destroy.destroy()
 
-def plot_tauc(Master):
-    global tauc_files
+
+def plot_trend(Master,mode):
+    global files
+
     fig = Figure(figsize = (5, 5), dpi = 100)
     plot = fig.add_subplot(1,1,1)
     delim = ','
     
-    for file in tauc_files:
+    for file in files[mode]:
         if file['delimiter'] == 'comma':
             delim = ','
         elif file['delimiter'] == 'whitespace':
@@ -212,22 +137,28 @@ def plot_tauc(Master):
         df_ref  = pd.read_csv(file['ref'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
         df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
 
-            # return (spectra - bg) / ((ref - bg) * spectraOverRefFactor)
-        energy = 1240/df_spec['x']
-        alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
-        tauc = (alpha['y']*(energy))**2
-        # print(tauc)
-        plot.plot(energy, tauc,label=file['legend'])
+        if mode == 'trans':
+            T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int'])
+            plot.plot(df_spec['x'], T['y'],label=file['legend'])
+        elif mode == 'ext':
+            alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
+            plot.plot(df_spec['x'], alpha['y'],label=file['legend'])
+        elif mode == 'tauc':
+            energy = 1240/df_spec['x']
+            alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
+            tauc = (alpha['y']*(energy))**2
+            # print(tauc)
+            plot.plot(energy, tauc,label=file['legend'])
 
-        if (file['has fit range'] == True):
-            slope, yintercept = np.polyfit(energy[minidx:maxidx], tauc[minidx:maxidx], 1) 
-            xintercept = -yintercept/slope
-            print(xintercept)
+            if (file['has fit range'] == True):
+                slope, yintercept = np.polyfit(energy[minidx:maxidx], tauc[minidx:maxidx], 1) 
+                xintercept = -yintercept/slope
+                print(xintercept)
 
     plot.legend()
-    plot.set_title(graph_settings['tauc']['title'])
-    plot.set_xlabel(graph_settings['tauc']['x axis title'])
-    plot.set_ylabel(graph_settings['tauc']['y axis title'])
+    plot.set_title(graph_settings[mode]['title'])
+    plot.set_xlabel(graph_settings[mode]['x axis title'])
+    plot.set_ylabel(graph_settings[mode]['y axis title'])
 
     canvas = FigureCanvasTkAgg(fig, master = Master)  
     canvas.draw()
@@ -309,27 +240,19 @@ def open_import_trans_trend_window(Master,mode):
 
     cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
     cancel_btn.grid(column=5,row=8,columnspan=1,rowspan=1,sticky='nsew')
-    if mode == 'trans':
-        import_btn = Button(master=top,text = "Import",command = lambda: import_trans(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get()))
-    elif mode == 'ext':
-        import_btn = Button(master=top,text = "Import",command = lambda: import_ext(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get()))
-    elif mode == 'tauc':
-        import_btn = Button(master=top,text = "Import",command = lambda: import_tauc(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get()))
+    import_btn = Button(master=top,text = "Import",command = lambda: import_trend(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get(),mode))
     import_btn.grid(column=6,row=8,columnspan=1,rowspan=1,sticky='nsew')
 
     configGridDim(top,7,9)
 
 
-# Function called when a checkbox is clicked
 def on_checkbox_change(checkbox_value, checkbox_var):
 #    print(f"Checkbox {checkbox_value} is {'checked' if checkbox_var.get() else 'unchecked'}")
     pass
    
-# Function to create multiple checkboxes using a loop
 def create_checkboxes(root, files):
    checkboxes = []  # List to store BooleanVar objects for each checkbox
 
-   # Loop to create checkboxes dynamically
    for i in range(len(files)):
       checkbox_var = tk.BooleanVar()  # Variable to track the state of the checkbox
       checkbox = tk.Checkbutton(
@@ -338,17 +261,13 @@ def create_checkboxes(root, files):
          variable=checkbox_var,
          command=lambda i=i, var=checkbox_var: on_checkbox_change(i+1, var)
       )
-      checkbox.pack()  # Place the checkbox in the window
-      checkboxes.append(checkbox_var)  # Add the variable to the list
+      checkbox.pack()
+      checkboxes.append(checkbox_var)
 
-   return checkboxes  # Return the list of checkbox variables
+   return checkboxes 
 
-def remove_files(destroy,checkboxes,mode):
-    global raw_files
-    global trans_files
-    global ext_files
-    global tauc_files
-    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files,'tauc':tauc_files}
+def remove_files(destroy,checkboxes,mode,Master):
+    global files
 
     list_of_state = [i.get() for i in checkboxes]
     idx_to_del = []
@@ -356,52 +275,23 @@ def remove_files(destroy,checkboxes,mode):
         if list_of_state[i] == True:
             idx_to_del.append(i)
 
-    new_files = [e for i, e in enumerate(files_from_mode[mode]) if i not in idx_to_del]
-
-    if mode == 'raw':
-        raw_files = new_files
-        plot_raws(raw_tab)
-    elif mode == 'trans':
-        trans_files = new_files
-        plot_trans(trans_tab)
-    elif mode == 'ext':
-        ext_files = new_files
-        plot_ext(ext_tab)
-    elif mode == 'tauc':
-        tauc_files = new_files
-        plot_tauc(tauc_tab)
+    new_files = [e for i, e in enumerate(files[mode]) if i not in idx_to_del]
+    files[mode] = new_files
+    plot_trend(Master,mode)
 
     destroy.destroy()
 
     
 def open_remove_trend_window(Master,mode):
-    global raw_files
-    global trans_files
-    global ext_files
-    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files,'tauc':tauc_files}
+    global files
 
     top= Toplevel(Master)
     top.geometry("800x300")
     top.title("Remove Trend")
 
-    checkboxes = create_checkboxes(top,files_from_mode[mode])
-    remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode),width=13)
+    checkboxes = create_checkboxes(top,files[mode])
+    remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode,Master),width=13)
     remove_btn.pack()
-   
-def open_remove_trend_window(Master,mode):
-    global raw_files
-    global trans_files
-    global ext_files
-    files_from_mode = {'raw': raw_files,'trans':trans_files,'ext':ext_files,'tauc':tauc_files}
-
-    top= Toplevel(Master)
-    top.geometry("800x300")
-    top.title("Remove Trend")
-
-    checkboxes = create_checkboxes(top,files_from_mode[mode])
-    remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode),width=13)
-    remove_btn.pack()
-
 
 
 # Variables
