@@ -38,3 +38,5 @@ Row skip is the number of rows up till your first data point. So if the first da
 - Introducing new feature to plot Tauc plots
 - Graph title and axis options
 - Relative transmission tab (currently that is sorta doable by replacing the reference with the other spectrum that you intend to compare, assuming the reference and background are the same).
+- Quality of life
+    - Remember working directory or a global directory settings
