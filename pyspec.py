@@ -17,7 +17,7 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("CSV files","*.csv*"), ("all files", "*.*")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
 
 
 
@@ -75,6 +75,7 @@ def open_import_raw_trend_window(Master):
     spectrum_explore_btn.grid(column=4,row=1,columnspan=1,rowspan=1,sticky='nsew')
 
     delimiter = StringVar()
+    delimiter.set('comma')
     delimiter_label = Label(master=top,text='Delimiter:')
     delimiter_label.grid(column=0,row=3,columnspan=1,rowspan=1,sticky='w')
     delimiter_combo = ttk.Combobox(master=top,textvariable=delimiter)
@@ -82,6 +83,7 @@ def open_import_raw_trend_window(Master):
     delimiter_combo.grid(column=1,row=3,columnspan=1,rowspan=1,sticky='w')
 
     rowskip = StringVar()
+    rowskip.set('1')
     rowskip_label = Label(master=top,text='Row skips:')
     rowskip_label.grid(column=2,row=3,columnspan=1,rowspan=1,sticky='E')
     rowskip_entry = Entry(master=top,textvariable=rowskip)
@@ -168,10 +170,6 @@ def plot_ext(Master):
         plot.plot(df_spec['x'], alpha['y'],label=file['legend'])
 
     plot.legend()
-    # handles, labels = plot.gca().get_legend_handles_labels()
-    # by_label = dict(zip(labels, handles))
-    # plot.legend(by_label.values(), by_label.keys())
-
     canvas = FigureCanvasTkAgg(fig, master = Master)  
     canvas.draw()
     canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew',columnspan=10,rowspan=15)
@@ -180,6 +178,46 @@ def plot_ext(Master):
     toolbar.update()
     toolbarframe.grid(row=16, column=0, sticky='nsew',columnspan=10)
 
+tauc_files = []
+def import_tauc(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip):
+    global tauc_files
+    if legend == '':
+        legend = spectrum
+    tauc_files.append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip)})
+    plot_tauc(Master)
+    destroy.destroy()
+
+def plot_tauc(Master):
+    global tauc_files
+    fig = Figure(figsize = (5, 5), dpi = 100)
+    plot = fig.add_subplot(1,1,1)
+    delim = ','
+    
+    for file in tauc_files:
+        if file['delimiter'] == 'comma':
+            delim = ','
+        elif file['delimiter'] == 'whitespace':
+            delim = '\s+'
+        df_spec  = pd.read_csv(file['spectrum'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+        df_spec_bg  = pd.read_csv(file['spectrum bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+        df_ref  = pd.read_csv(file['ref'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+        df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+
+            # return (spectra - bg) / ((ref - bg) * spectraOverRefFactor)
+        alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
+        tauc = (alpha['y']*(1240/df_spec['x']))**2
+        print(tauc)
+        plot.plot(df_spec['x'], tauc,label=file['legend'])
+
+    plot.legend()
+
+    canvas = FigureCanvasTkAgg(fig, master = Master)  
+    canvas.draw()
+    canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew',columnspan=10,rowspan=15)
+    toolbarframe = Frame(master=Master)
+    toolbar = NavigationToolbar2Tk(canvas, toolbarframe)
+    toolbar.update()
+    toolbarframe.grid(row=16, column=0, sticky='nsew',columnspan=10)
 
 def open_import_trans_trend_window(Master,mode):
     top= Toplevel(Master)
@@ -236,6 +274,7 @@ def open_import_trans_trend_window(Master,mode):
 
 
     delimiter = StringVar()
+    delimiter.set('comma')
     delimiter_label = Label(master=top,text='Delimiter:')
     delimiter_label.grid(column=0,row=6,columnspan=1,rowspan=1,sticky='w')
     delimiter_combo = ttk.Combobox(master=top,textvariable=delimiter)
@@ -243,6 +282,7 @@ def open_import_trans_trend_window(Master,mode):
     delimiter_combo.grid(column=1,row=6,columnspan=1,rowspan=1,sticky='w')
 
     rowskip = StringVar()
+    rowskip.set('1')
     rowskip_label = Label(master=top,text='Row skips:')
     rowskip_label.grid(column=2,row=6,columnspan=1,rowspan=1,sticky='E')
     rowskip_entry = Entry(master=top,textvariable=rowskip)
@@ -250,14 +290,16 @@ def open_import_trans_trend_window(Master,mode):
 
 
     cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
-    cancel_btn.grid(column=3,row=8,columnspan=1,rowspan=1,sticky='nsew')
+    cancel_btn.grid(column=5,row=8,columnspan=1,rowspan=1,sticky='nsew')
     if mode == 'trans':
         import_btn = Button(master=top,text = "Import",command = lambda: import_trans(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get()))
     elif mode == 'ext':
         import_btn = Button(master=top,text = "Import",command = lambda: import_ext(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get()))
-    import_btn.grid(column=4,row=8,columnspan=1,rowspan=1,sticky='nsew')
+    elif mode == 'tauc':
+        import_btn = Button(master=top,text = "Import",command = lambda: import_tauc(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get()))
+    import_btn.grid(column=6,row=8,columnspan=1,rowspan=1,sticky='nsew')
 
-    configGridDim(top,7,8)
+    configGridDim(top,7,9)
 
 
 # Function called when a checkbox is clicked
@@ -340,10 +382,12 @@ tabControl = ttk.Notebook(window)
 raw_tab = ttk.Frame(tabControl)
 trans_tab = ttk.Frame(tabControl)
 ext_tab = ttk.Frame(tabControl)
+tauc_tab = ttk.Frame(tabControl)
 
 tabControl.add(raw_tab, text ='Raw')
 tabControl.add(trans_tab, text ='Transmittance')
 tabControl.add(ext_tab, text ='Extinction')
+tabControl.add(tauc_tab, text ='Tauc')
 tabControl.pack(expand = 1, fill ="both")
 
 
@@ -374,6 +418,15 @@ ext_remove_btn = Button(ext_menubar,text='Remove',command=lambda: open_remove_tr
 ext_remove_btn.pack(side = LEFT,padx=2)
 ext_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(ext_tab,10,17)
+
+# Tauc Tab
+tauc_menubar = ttk.Frame(tauc_tab)
+tauc_import_btn = Button(tauc_menubar,text='Import',command=lambda: open_import_trans_trend_window(tauc_tab,'tauc'),width=13)
+tauc_import_btn.pack(side = LEFT,padx=2)
+tauc_remove_btn = Button(tauc_menubar,text='Remove',command=lambda: open_remove_trend_window(tauc_tab,'tauc'),width=13)
+tauc_remove_btn.pack(side = LEFT,padx=2)
+tauc_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
+configGridDim(tauc_tab,10,17)
 
 
 window.mainloop()  
