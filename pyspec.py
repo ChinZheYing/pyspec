@@ -4,8 +4,7 @@ from tkinter import *
 from tkinter import filedialog
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
-NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 
 import pandas as pd 
 import numpy as np
@@ -17,98 +16,11 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    # return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
-    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"), ("all files", "*.*")))
+    # return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"),("Data point","*.dpt"), ("all files", "*.*")))
 
 graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
-
-raw_files = []
-
-def import_raw(destroy,Master,filename,legend,delim,skip):
-    global raw_files
-    if legend == '':
-        legend = filename
-    raw_files.append({'path':filename,'legend':legend,'delimiter':delim,'row skips':int(skip)})
-    plot_raws(Master)
-    destroy.destroy()
-
-def plot_raws(Master):
-    global raw_files
-    fig = Figure(figsize = (5, 5), dpi = 100)
-    plot = fig.add_subplot(1,1,1)
-
-    for file in raw_files:
-        if file['delimiter'] == 'comma':
-            delim = ','
-        elif file['delimiter'] == 'whitespace':
-            delim = '\s+'
-        df  = pd.read_csv(file['path'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        plot.plot(df['x'], df['y'],label=file['legend'])
-
-    plot.legend()
-    plot.set_title(graph_settings['raw']['title'])
-    plot.set_xlabel(graph_settings['raw']['x axis title'])
-    plot.set_ylabel(graph_settings['raw']['y axis title'])
-
-    canvas = FigureCanvasTkAgg(fig, master = Master)  
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew',columnspan=10,rowspan=15)
-    toolbarframe = Frame(master=Master)
-    toolbar = NavigationToolbar2Tk(canvas, toolbarframe)
-    toolbar.update()
-    toolbarframe.grid(row=16, column=0, sticky='nsew',columnspan=10)
-
-def open_import_raw_trend_window(Master):
-    top= Toplevel(Master)
-    top.geometry("800x300")
-    top.title("Import Trend")
-
-    spectrum_legend = StringVar()
-    spectrum_legend_label = Label(master=top,text='Legend')
-    spectrum_legend_label.grid(column=0,row=0,columnspan=1,rowspan=1,sticky='nsew')
-    spectrum_legend_entry = Entry(master=top,textvariable=spectrum_legend)
-    spectrum_legend_entry.grid(column=1,row=0,columnspan=3,rowspan=1,sticky='nsew')
-
-    spectrum_file_path = StringVar()
-    spectrum_path_label = Label(master=top,text='Path')
-    spectrum_path_label.grid(column=0,row=1,columnspan=1,rowspan=1,sticky='nsew')
-    spectrum_path_entry = Entry(master=top,textvariable=spectrum_file_path)
-    spectrum_path_entry.grid(column=1,row=1,columnspan=3,rowspan=1,sticky='nsew')
-    spectrum_explore_btn = Button(master=top,text = "Browse Files",command = lambda: spectrum_file_path.set(browseFiles(top)))
-    spectrum_explore_btn.grid(column=4,row=1,columnspan=1,rowspan=1,sticky='nsew')
-
-    delimiter = StringVar()
-    delimiter.set('comma')
-    delimiter_label = Label(master=top,text='Delimiter:')
-    delimiter_label.grid(column=0,row=3,columnspan=1,rowspan=1,sticky='w')
-    delimiter_combo = ttk.Combobox(master=top,textvariable=delimiter)
-    delimiter_combo['values'] = ('comma','whitespace')
-    delimiter_combo.grid(column=1,row=3,columnspan=1,rowspan=1,sticky='w')
-
-    rowskip = StringVar()
-    rowskip.set('1')
-    rowskip_label = Label(master=top,text='Row skips:')
-    rowskip_label.grid(column=2,row=3,columnspan=1,rowspan=1,sticky='E')
-    rowskip_entry = Entry(master=top,textvariable=rowskip)
-    rowskip_entry.grid(column=3,row=3,columnspan=1,rowspan=1,sticky='w')
-
-    cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
-    cancel_btn.grid(column=3,row=8,columnspan=1,rowspan=1,sticky='nsew')
-    import_btn = Button(master=top,text = "Import",command = lambda: import_raw(top,Master,spectrum_file_path.get(),spectrum_legend.get(),delimiter.get(),rowskip.get()))
-    import_btn.grid(column=4,row=8,columnspan=1,rowspan=1,sticky='nsew')
-
-
-    configGridDim(top,5,8)
-
-
-
-
-
-
-trans_files = []
-ext_files = []
-tauc_files = []
-files = {'trans':[],'ext':[],'tauc':[]}
+files = {'raw':[],'trans':[],'ext':[],'tauc':[]}
 
 def import_trend(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip,mode):
     global files
@@ -133,11 +45,15 @@ def plot_trend(Master,mode):
         elif file['delimiter'] == 'whitespace':
             delim = '\s+'
         df_spec  = pd.read_csv(file['spectrum'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_spec_bg  = pd.read_csv(file['spectrum bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_ref  = pd.read_csv(file['ref'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
-        df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
 
-        if mode == 'trans':
+        if mode != 'raw':
+            df_spec_bg  = pd.read_csv(file['spectrum bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+            df_ref  = pd.read_csv(file['ref'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+            df_ref_bg  = pd.read_csv(file['ref bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+
+        if mode == 'raw':
+            plot.plot(df_spec['x'], df_spec['y'],label=file['legend'])
+        elif mode == 'trans':
             T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int'])
             plot.plot(df_spec['x'], T['y'],label=file['legend'])
         elif mode == 'ext':
@@ -174,55 +90,65 @@ def open_import_trans_trend_window(Master,mode):
     top.title("Import Trend")
 
     spectrum_legend = StringVar()
+    spectrum_file_path = StringVar()
+    spectrum_intTime = StringVar()
+    spectrum_bg_file_path = StringVar()
+    ref_file_path = StringVar()
+    ref_intTime = StringVar()
+    delimiter = StringVar()
+    ref_bg_file_path = StringVar()
+    rowskip = StringVar()
+
+    if mode == 'raw':
+        spectrum_intTime.set('1')
+        spectrum_bg_file_path.set('')
+        ref_file_path.set('')
+        ref_intTime.set('1')
+
     spectrum_legend_label = Label(master=top,text='Legend')
     spectrum_legend_label.grid(column=0,row=0,columnspan=1,rowspan=1,sticky='w')
     spectrum_legend_entry = Entry(master=top,textvariable=spectrum_legend)
     spectrum_legend_entry.grid(column=1,row=0,columnspan=3,rowspan=1,sticky='nsew')
 
-    spectrum_file_path = StringVar()
     spectrum_path_label = Label(master=top,text='Spectrum Path')
     spectrum_path_label.grid(column=0,row=1,columnspan=1,rowspan=1,sticky='w')
     spectrum_path_entry = Entry(master=top,textvariable=spectrum_file_path)
     spectrum_path_entry.grid(column=1,row=1,columnspan=3,rowspan=1,sticky='nsew')
     spectrum_explore_btn = Button(master=top,text = "Browse Files",command = lambda: spectrum_file_path.set(browseFiles(top)))
     spectrum_explore_btn.grid(column=4,row=1,columnspan=1,rowspan=1,sticky='nsew')
-    spectrum_intTime = StringVar()
-    spectrum_intTime_label = Label(master=top,text='Int Time:')
-    spectrum_intTime_label.grid(column=5,row=1,columnspan=1,rowspan=1,sticky='nsew')
-    spectrum_intTime_entry = Entry(master=top,textvariable=spectrum_intTime)
-    spectrum_intTime_entry.grid(column=6,row=1,columnspan=1,rowspan=1,sticky='w')
     
-    spectrum_bg_file_path = StringVar()
-    spectrum_bg_path_label = Label(master=top,text='Spectrum Bg Path')
-    spectrum_bg_path_label.grid(column=0,row=2,columnspan=1,rowspan=1,sticky='w')
-    spectrum_bg_path_entry = Entry(master=top,textvariable=spectrum_bg_file_path)
-    spectrum_bg_path_entry.grid(column=1,row=2,columnspan=3,rowspan=1,sticky='nsew')
-    spectrum_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: spectrum_bg_file_path.set(browseFiles(top)))
-    spectrum_bg_explore_btn.grid(column=4,row=2,columnspan=1,rowspan=1,sticky='nsew')
+    if mode != 'raw':
+        spectrum_intTime_label = Label(master=top,text='Int Time:')
+        spectrum_intTime_label.grid(column=5,row=1,columnspan=1,rowspan=1,sticky='nsew')
+        spectrum_intTime_entry = Entry(master=top,textvariable=spectrum_intTime)
+        spectrum_intTime_entry.grid(column=6,row=1,columnspan=1,rowspan=1,sticky='w')
+        
+        spectrum_bg_path_label = Label(master=top,text='Spectrum Bg Path')
+        spectrum_bg_path_label.grid(column=0,row=2,columnspan=1,rowspan=1,sticky='w')
+        spectrum_bg_path_entry = Entry(master=top,textvariable=spectrum_bg_file_path)
+        spectrum_bg_path_entry.grid(column=1,row=2,columnspan=3,rowspan=1,sticky='nsew')
+        spectrum_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: spectrum_bg_file_path.set(browseFiles(top)))
+        spectrum_bg_explore_btn.grid(column=4,row=2,columnspan=1,rowspan=1,sticky='nsew')
 
-    ref_file_path = StringVar()
-    ref_path_label = Label(master=top,text='Reference Path')
-    ref_path_label.grid(column=0,row=3,columnspan=1,rowspan=1,sticky='w')
-    ref_path_entry = Entry(master=top,textvariable=ref_file_path)
-    ref_path_entry.grid(column=1,row=3,columnspan=3,rowspan=1,sticky='nsew')
-    ref_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref_file_path.set(browseFiles(top)))
-    ref_explore_btn.grid(column=4,row=3,columnspan=1,rowspan=1,sticky='nsew')
-    ref_intTime = StringVar()
-    ref_intTime_label = Label(master=top,text='Int Time:')
-    ref_intTime_label.grid(column=5,row=3,columnspan=1,rowspan=1,sticky='nsew')
-    ref_intTime_entry = Entry(master=top,textvariable=ref_intTime)
-    ref_intTime_entry.grid(column=6,row=3,columnspan=1,rowspan=1,sticky='w')
+        ref_path_label = Label(master=top,text='Reference Path')
+        ref_path_label.grid(column=0,row=3,columnspan=1,rowspan=1,sticky='w')
+        ref_path_entry = Entry(master=top,textvariable=ref_file_path)
+        ref_path_entry.grid(column=1,row=3,columnspan=3,rowspan=1,sticky='nsew')
+        ref_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref_file_path.set(browseFiles(top)))
+        ref_explore_btn.grid(column=4,row=3,columnspan=1,rowspan=1,sticky='nsew')
+        
+        ref_intTime_label = Label(master=top,text='Int Time:')
+        ref_intTime_label.grid(column=5,row=3,columnspan=1,rowspan=1,sticky='nsew')
+        ref_intTime_entry = Entry(master=top,textvariable=ref_intTime)
+        ref_intTime_entry.grid(column=6,row=3,columnspan=1,rowspan=1,sticky='w')
 
-    ref_bg_file_path = StringVar()
-    ref_bg_path_label = Label(master=top,text='Reference Bg Path')
-    ref_bg_path_label.grid(column=0,row=4,columnspan=1,rowspan=1,sticky='w')
-    ref_bg_path_entry = Entry(master=top,textvariable=ref_bg_file_path)
-    ref_bg_path_entry.grid(column=1,row=4,columnspan=3,rowspan=1,sticky='nsew')
-    ref_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref_bg_file_path.set(browseFiles(top)))
-    ref_bg_explore_btn.grid(column=4,row=4,columnspan=1,rowspan=1,sticky='nsew')
-
-
-    delimiter = StringVar()
+        ref_bg_path_label = Label(master=top,text='Reference Bg Path')
+        ref_bg_path_label.grid(column=0,row=4,columnspan=1,rowspan=1,sticky='w')
+        ref_bg_path_entry = Entry(master=top,textvariable=ref_bg_file_path)
+        ref_bg_path_entry.grid(column=1,row=4,columnspan=3,rowspan=1,sticky='nsew')
+        ref_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref_bg_file_path.set(browseFiles(top)))
+        ref_bg_explore_btn.grid(column=4,row=4,columnspan=1,rowspan=1,sticky='nsew')
+    
     delimiter.set('comma')
     delimiter_label = Label(master=top,text='Delimiter:')
     delimiter_label.grid(column=0,row=6,columnspan=1,rowspan=1,sticky='w')
@@ -230,13 +156,11 @@ def open_import_trans_trend_window(Master,mode):
     delimiter_combo['values'] = ('comma','whitespace')
     delimiter_combo.grid(column=1,row=6,columnspan=1,rowspan=1,sticky='w')
 
-    rowskip = StringVar()
     rowskip.set('1')
     rowskip_label = Label(master=top,text='Row skips:')
     rowskip_label.grid(column=2,row=6,columnspan=1,rowspan=1,sticky='E')
     rowskip_entry = Entry(master=top,textvariable=rowskip)
     rowskip_entry.grid(column=3,row=6,columnspan=1,rowspan=1,sticky='w')
-
 
     cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
     cancel_btn.grid(column=5,row=8,columnspan=1,rowspan=1,sticky='nsew')
@@ -318,7 +242,7 @@ tabControl.pack(expand = 1, fill ="both")
 
 # Raw Tab
 raw_menubar = ttk.Frame(raw_tab)
-raw_import_btn = Button(raw_menubar,text='Import',command=lambda: open_import_raw_trend_window(raw_tab),width=13)
+raw_import_btn = Button(raw_menubar,text='Import',command=lambda: open_import_trans_trend_window(raw_tab,'raw'),width=13)
 raw_import_btn.pack(side = LEFT,padx=2)
 raw_remove_btn = Button(raw_menubar,text='Remove',command=lambda: open_remove_trend_window(raw_tab,'raw'),width=13)
 raw_remove_btn.pack(side = LEFT,padx=2)
