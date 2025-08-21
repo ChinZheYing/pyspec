@@ -16,8 +16,8 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    # return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/testtauc", title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
-    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"),("Data point","*.dpt"), ("all files", "*.*")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/zno_data/20aug", title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
+    # return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"),("Data point","*.dpt"), ("all files", "*.*")))
 
 graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
 files = {'raw':[],'trans':[],'ext':[],'tauc':[]}
@@ -67,9 +67,22 @@ def plot_trend(Master,mode):
             plot.plot(energy, tauc,label=file['legend'])
 
             if (file['has fit range'] == True):
-                slope, yintercept = np.polyfit(energy[minidx:maxidx], tauc[minidx:maxidx], 1) 
+                minindex = 0
+                maxindex = -1
+                print(df_spec['x'][0])
+                for i in range(len(df_spec['x'])):
+                    if df_spec['x'][i] < file['fit min']:
+                        minindex = i
+                    if df_spec['x'][i] > file['fit max']:
+                        maxindex = i
+                        break
+                slope, yintercept = np.polyfit(energy[minindex:maxindex], tauc[minindex:maxindex], 1) 
                 xintercept = -yintercept/slope
-                print(xintercept)
+                # print(xintercept)
+                fit = np.poly1d([slope, yintercept])
+                line = np.linspace(3, 4, 100)
+                plot.plot(line, fit(line))#,label='Linear fit of steepest section'
+
 
     plot.legend()
     plot.set_title(graph_settings[mode]['title'])
@@ -171,7 +184,6 @@ def open_import_trans_trend_window(Master,mode):
 
 
 def on_checkbox_change(checkbox_value, checkbox_var):
-#    print(f"Checkbox {checkbox_value} is {'checked' if checkbox_var.get() else 'unchecked'}")
     pass
    
 def create_checkboxes(root, files):
@@ -216,6 +228,55 @@ def open_remove_trend_window(Master,mode):
     checkboxes = create_checkboxes(top,files[mode])
     remove_btn = Button(top,text='Remove',command=lambda: remove_files(top,checkboxes,mode,Master),width=13)
     remove_btn.pack()
+
+def fit_trend(destroy,Master,mode,trend_index_dict,minwave,maxwave,legend):
+    global files
+
+    files['tauc'][trend_index_dict[legend]]['has fit range'] = True
+    files['tauc'][trend_index_dict[legend]]['fit min'] = float(minwave)
+    files['tauc'][trend_index_dict[legend]]['fit max'] = float(maxwave)
+
+    plot_trend(Master,mode)
+    destroy.destroy()
+
+def open_new_fit_window(Master,mode):
+    global files
+
+    trend_index_dict = {}
+
+    top= Toplevel(Master)
+    top.geometry("800x300")
+    top.title("New Fit")
+
+    spec = StringVar()
+    spec_label = Label(master=top,text='Pick a spectrum:')
+    spec_label.grid(column=0,row=0,columnspan=1,rowspan=1,sticky='E')
+    spec_combo = ttk.Combobox(master=top,textvariable=spec)
+    labels = []
+    for i in range(len(files['tauc'])):
+        trend_index_dict[files['tauc'][i]['legend']] = i
+        labels.append(files['tauc'][i]['legend'])
+    spec_combo['values'] = tuple(labels)
+    spec_combo.grid(column=1,row=0,columnspan=1,rowspan=1,sticky='w')
+
+    minwave = StringVar()
+    minmave_label = Label(master=top,text='Min Wavelength:')
+    minmave_label.grid(column=0,row=1,columnspan=1,rowspan=1,sticky='E')
+    minwave_entry = Entry(master=top,textvariable=minwave)
+    minwave_entry.grid(column=1,row=1,columnspan=1,rowspan=1,sticky='w')
+
+    maxwave = StringVar()
+    maxmave_label = Label(master=top,text='Max Wavelength:')
+    maxmave_label.grid(column=0,row=2,columnspan=1,rowspan=1,sticky='E')
+    maxwave_entry = Entry(master=top,textvariable=maxwave)
+    maxwave_entry.grid(column=1,row=2,columnspan=1,rowspan=1,sticky='w')
+
+    fit_btn = Button(master=top,text = "Fit",command = lambda:fit_trend(top,Master,mode,trend_index_dict,minwave.get(),maxwave.get(),spec.get()))
+    fit_btn.grid(column=6,row=8,columnspan=1,rowspan=1,sticky='nsew')
+
+    configGridDim(top,7,9)
+
+
 
 
 # Variables
@@ -274,7 +335,7 @@ tauc_import_btn = Button(tauc_menubar,text='Import',command=lambda: open_import_
 tauc_import_btn.pack(side = LEFT,padx=2)
 tauc_remove_btn = Button(tauc_menubar,text='Remove',command=lambda: open_remove_trend_window(tauc_tab,'tauc'),width=13)
 tauc_remove_btn.pack(side = LEFT,padx=2)
-tauc_add_fit_btn = Button(tauc_menubar,text='New Fit',command=None,width=13)
+tauc_add_fit_btn = Button(tauc_menubar,text='New Fit',command=lambda: open_new_fit_window(tauc_tab,'tauc'),width=13)
 tauc_add_fit_btn.pack(side = LEFT,padx=2)
 tauc_edit_fit_btn = Button(tauc_menubar,text='Edit Fit',command=None,width=13)
 tauc_edit_fit_btn.pack(side = LEFT,padx=2)
