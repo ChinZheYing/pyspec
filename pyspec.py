@@ -54,14 +54,14 @@ def plot_trend(Master,mode):
         if mode == 'raw':
             plot.plot(df_spec['x'], df_spec['y'],label=file['legend'])
         elif mode == 'trans':
-            T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int'])
+            T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['ref int']/file['spectrum int'])
             plot.plot(df_spec['x'], T['y'],label=file['legend'])
         elif mode == 'ext':
-            alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
+            alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['ref int']/file['spectrum int']))
             plot.plot(df_spec['x'], alpha['y'],label=file['legend'])
         elif mode == 'tauc':
             energy = 1240/df_spec['x']
-            alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['spectrum int']/file['ref int']))
+            alpha = -np.log10(((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['ref int']/file['spectrum int']))
             tauc = (alpha['y']*(energy))**2
             # print(tauc)
             plot.plot(energy, tauc,label=file['legend'])
