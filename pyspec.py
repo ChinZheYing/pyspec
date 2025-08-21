@@ -16,8 +16,8 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/zno_data/20aug", title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
-    # return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"),("Data point","*.dpt"), ("all files", "*.*")))
+    # return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/genta_vis_sensing", title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
+    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"),("Data point","*.dpt"), ("all files", "*.*")))
 
 graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
 files = {'raw':[],'trans':[],'ext':[],'tauc':[]}
