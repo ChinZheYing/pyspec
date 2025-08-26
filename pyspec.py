@@ -351,31 +351,38 @@ def save_settings(Master,destroy,mode,wdir,title,x,y):
 
 
 def open_settings_window(Master,mode):
+    global graph_settings
+    global working_dir
+
     top= Toplevel(Master)
     top.geometry("800x300")
     top.title("Import Trend")
 
-    working_dir = StringVar()
-    working_dir_label = Label(master=top,text='Global Directory')
-    working_dir_label.grid(column=0,row=0,columnspan=1,rowspan=1,sticky='w')
-    working_dir_entry = Entry(master=top,textvariable=working_dir)
-    working_dir_entry.grid(column=1,row=0,columnspan=3,rowspan=1,sticky='nsew')
-    spectrum_explore_btn = Button(master=top,text = "Browse Directory",command = lambda: working_dir.set(filedialog.askdirectory()))
-    spectrum_explore_btn.grid(column=4,row=0,columnspan=1,rowspan=1,sticky='nsew')
+    wdir = StringVar()
+    wdir.set(working_dir)
+    wdir_label = Label(master=top,text='Global Directory')
+    wdir_label.grid(column=0,row=0,columnspan=1,rowspan=1,sticky='w')
+    wdir_entry = Entry(master=top,textvariable=wdir)
+    wdir_entry.grid(column=1,row=0,columnspan=3,rowspan=1,sticky='nsew')
+    wdir_btn = Button(master=top,text = "Browse Directory",command = lambda: wdir.set(filedialog.askdirectory()))
+    wdir_btn.grid(column=4,row=0,columnspan=1,rowspan=1,sticky='nsew')
     
     graph_title = StringVar()
+    graph_title.set(graph_settings[mode]['title'])
     graph_title_label = Label(master=top,text='Graph Title')
     graph_title_label.grid(column=0,row=2,columnspan=1,rowspan=1,sticky='w')
     graph_title_entry = Entry(master=top,textvariable=graph_title)
     graph_title_entry.grid(column=1,row=2,columnspan=3,rowspan=1,sticky='nsew')
 
     y_title = StringVar()
+    y_title.set(graph_settings[mode]['y axis title'])
     y_title_label = Label(master=top,text='Y Title')
     y_title_label.grid(column=0,row=3,columnspan=1,rowspan=1,sticky='w')
     y_title_entry = Entry(master=top,textvariable=y_title)
     y_title_entry.grid(column=1,row=3,columnspan=3,rowspan=1,sticky='nsew')
 
     x_title = StringVar()
+    x_title.set(graph_settings[mode]['x axis title'])
     x_title_label = Label(master=top,text='X Title')
     x_title_label.grid(column=0,row=4,columnspan=1,rowspan=1,sticky='w')
     x_title_entry = Entry(master=top,textvariable=x_title)
@@ -383,7 +390,7 @@ def open_settings_window(Master,mode):
 
     cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
     cancel_btn.grid(column=5,row=8,columnspan=1,rowspan=1,sticky='nsew')
-    import_btn = Button(master=top,text = "Save",command = lambda: save_settings(Master,top,mode,working_dir.get(),graph_title.get(),y_title.get(),x_title.get()))
+    import_btn = Button(master=top,text = "Save",command = lambda: save_settings(Master,top,mode,wdir.get(),graph_title.get(),x_title.get(),y_title.get()))
     import_btn.grid(column=6,row=8,columnspan=1,rowspan=1,sticky='nsew')
 
     configGridDim(top,7,9)
