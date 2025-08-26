@@ -9,6 +9,8 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 import pandas as pd 
 import numpy as np
 
+working_dir = '/'
+
 def configGridDim(frame,col,rw):
     for i in range(col):
         frame.grid_columnconfigure(i, weight=1, uniform="foo")
@@ -16,18 +18,20 @@ def configGridDim(frame,col,rw):
         frame.grid_rowconfigure(i, weight=1, uniform="foo")
         
 def browseFiles(Master):
-    # return filedialog.askopenfilename(parent=Master,initialdir = "/home/zheying/Downloads/genta_vis_sensing", title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
-    return filedialog.askopenfilename(parent=Master,initialdir = "/", title = "Select a File", filetypes = (("CSV files","*.csv*"),("Text files","*.txt"),("Data point","*.dpt"), ("all files", "*.*")))
+    return filedialog.askopenfilename(parent=Master,initialdir = working_dir, title = "Select a File", filetypes = (("all files", "*.*"),("CSV files","*.csv*"),("Text files","*.txt")))
 
-graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'}}
-files = {'raw':[],'trans':[],'ext':[],'tauc':[]}
+graph_settings = {'raw':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Counts'},'trans':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Transmittance'},'ext':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Extinction'},'tauc':{'title':'','x axis title':'Photon Energy(eV)','y axis title':'(αE)²'},'delta':{'title':'','x axis title':'Wavelength(nm)','y axis title':'Delta T'}}
+files = {'raw':[],'trans':[],'ext':[],'tauc':[],'delta':[]}
 
-def import_trend(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip,mode):
+def import_trend(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip,mode,spectrum2,spectrum2bg,ref2,ref2bg,spec2int,ref2int):
     global files
 
     if legend == '':
         legend = spectrum
-    files[mode].append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip),'has fit range':False,'fit max':0,'fit min':0})
+    if mode != 'delta':
+        files[mode].append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip),'has fit range':False,'fit max':0,'fit min':0})
+    else:
+        files[mode].append({'spectrum':spectrum,'spectrum bg':spectrumbg,'ref':ref,'ref bg':refbg,'spectrum int':int(specint),'ref int':int(refint),'legend':legend,'delimiter':delim,'row skips':int(skip),'has fit range':False,'fit max':0,'fit min':0,'spectrum 2':spectrum2,'spectrum 2 bg':spectrum2bg,'ref 2':ref2,'ref 2 bg':ref2bg,'spectrum 2 int':int(spec2int),'ref 2 int':int(ref2int)})
     plot_trend(Master,mode)
     destroy.destroy()
 
@@ -82,7 +86,16 @@ def plot_trend(Master,mode):
                 fit = np.poly1d([slope, yintercept])
                 line = np.linspace(3, 4, 100)
                 plot.plot(line, fit(line))#,label='Linear fit of steepest section'
+        elif mode == 'delta':
+            df2_spec  = pd.read_csv(file['spectrum 2'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+            df2_spec_bg  = pd.read_csv(file['spectrum 2 bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+            df2_ref  = pd.read_csv(file['ref 2'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
+            df2_ref_bg  = pd.read_csv(file['ref 2 bg'],delimiter=delim,skiprows=file['row skips'],header=None,names=['x', 'y'])
 
+            T = ((df_spec - df_spec_bg) / (df_ref - df_ref_bg)) * (file['ref int']/file['spectrum int'])
+            T2 = ((df2_spec - df2_spec_bg) / (df2_ref - df2_ref_bg)) * (file['ref 2 int']/file['spectrum 2 int'])
+            deltaT = (T['y']-T2['y'])/T['y']
+            plot.plot(df_spec['x'], deltaT,label=file['legend'])
 
     plot.legend()
     plot.set_title(graph_settings[mode]['title'])
@@ -111,6 +124,14 @@ def open_import_trans_trend_window(Master,mode):
     delimiter = StringVar()
     ref_bg_file_path = StringVar()
     rowskip = StringVar()
+
+    spectrum2_legend = StringVar()
+    spectrum2_file_path = StringVar()
+    spectrum2_intTime = StringVar()
+    spectrum2_bg_file_path = StringVar()
+    ref2_file_path = StringVar()
+    ref2_intTime = StringVar()
+    ref2_bg_file_path = StringVar()
 
     if mode == 'raw':
         spectrum_intTime.set('1')
@@ -161,26 +182,65 @@ def open_import_trans_trend_window(Master,mode):
         ref_bg_path_entry.grid(column=1,row=4,columnspan=3,rowspan=1,sticky='nsew')
         ref_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref_bg_file_path.set(browseFiles(top)))
         ref_bg_explore_btn.grid(column=4,row=4,columnspan=1,rowspan=1,sticky='nsew')
+
+    if mode == 'delta':
+        spectrum2_path_label = Label(master=top,text='Spectrum 2 Path')
+        spectrum2_path_label.grid(column=0,row=5,columnspan=1,rowspan=1,sticky='w')
+        spectrum2_path_entry = Entry(master=top,textvariable=spectrum2_file_path)
+        spectrum2_path_entry.grid(column=1,row=5,columnspan=3,rowspan=1,sticky='nsew')
+        spectrum2_explore_btn = Button(master=top,text = "Browse Files",command = lambda: spectrum2_file_path.set(browseFiles(top)))
+        spectrum2_explore_btn.grid(column=4,row=5,columnspan=1,rowspan=1,sticky='nsew')
+
+        spectrum2_intTime_label = Label(master=top,text='Int Time:')
+        spectrum2_intTime_label.grid(column=5,row=5,columnspan=1,rowspan=1,sticky='nsew')
+        spectrum2_intTime_entry = Entry(master=top,textvariable=spectrum2_intTime)
+        spectrum2_intTime_entry.grid(column=6,row=5,columnspan=1,rowspan=1,sticky='w')
+        
+        spectrum2_bg_path_label = Label(master=top,text='Spectrum 2 Bg Path')
+        spectrum2_bg_path_label.grid(column=0,row=6,columnspan=1,rowspan=1,sticky='w')
+        spectrum2_bg_path_entry = Entry(master=top,textvariable=spectrum2_bg_file_path)
+        spectrum2_bg_path_entry.grid(column=1,row=6,columnspan=3,rowspan=1,sticky='nsew')
+        spectrum2_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: spectrum2_bg_file_path.set(browseFiles(top)))
+        spectrum2_bg_explore_btn.grid(column=4,row=6,columnspan=1,rowspan=1,sticky='nsew')
+
+        ref2_path_label = Label(master=top,text='Reference 2 Path')
+        ref2_path_label.grid(column=0,row=7,columnspan=1,rowspan=1,sticky='w')
+        ref2_path_entry = Entry(master=top,textvariable=ref2_file_path)
+        ref2_path_entry.grid(column=1,row=7,columnspan=3,rowspan=1,sticky='nsew')
+        ref2_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref2_file_path.set(browseFiles(top)))
+        ref2_explore_btn.grid(column=4,row=7,columnspan=1,rowspan=1,sticky='nsew')
+        
+        ref2_intTime_label = Label(master=top,text='Int Time:')
+        ref2_intTime_label.grid(column=5,row=7,columnspan=1,rowspan=1,sticky='nsew')
+        ref2_intTime_entry = Entry(master=top,textvariable=ref2_intTime)
+        ref2_intTime_entry.grid(column=6,row=7,columnspan=1,rowspan=1,sticky='w')
+
+        ref2_bg_path_label = Label(master=top,text='Reference 2 Bg Path')
+        ref2_bg_path_label.grid(column=0,row=8,columnspan=1,rowspan=1,sticky='w')
+        ref2_bg_path_entry = Entry(master=top,textvariable=ref2_bg_file_path)
+        ref2_bg_path_entry.grid(column=1,row=8,columnspan=3,rowspan=1,sticky='nsew')
+        ref2_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref2_bg_file_path.set(browseFiles(top)))
+        ref2_bg_explore_btn.grid(column=4,row=8,columnspan=1,rowspan=1,sticky='nsew')
     
     delimiter.set('comma')
     delimiter_label = Label(master=top,text='Delimiter:')
-    delimiter_label.grid(column=0,row=6,columnspan=1,rowspan=1,sticky='w')
+    delimiter_label.grid(column=0,row=9,columnspan=1,rowspan=1,sticky='w')
     delimiter_combo = ttk.Combobox(master=top,textvariable=delimiter)
     delimiter_combo['values'] = ('comma','whitespace')
-    delimiter_combo.grid(column=1,row=6,columnspan=1,rowspan=1,sticky='w')
+    delimiter_combo.grid(column=1,row=9,columnspan=1,rowspan=1,sticky='w')
 
     rowskip.set('1')
     rowskip_label = Label(master=top,text='Row skips:')
-    rowskip_label.grid(column=2,row=6,columnspan=1,rowspan=1,sticky='E')
+    rowskip_label.grid(column=2,row=9,columnspan=1,rowspan=1,sticky='E')
     rowskip_entry = Entry(master=top,textvariable=rowskip)
-    rowskip_entry.grid(column=3,row=6,columnspan=1,rowspan=1,sticky='w')
+    rowskip_entry.grid(column=3,row=9,columnspan=1,rowspan=1,sticky='w')
 
     cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
-    cancel_btn.grid(column=5,row=8,columnspan=1,rowspan=1,sticky='nsew')
-    import_btn = Button(master=top,text = "Import",command = lambda: import_trend(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get(),mode))
-    import_btn.grid(column=6,row=8,columnspan=1,rowspan=1,sticky='nsew')
+    cancel_btn.grid(column=5,row=10,columnspan=1,rowspan=1,sticky='nsew')
+    import_btn = Button(master=top,text = "Import",command = lambda: import_trend(top,Master,spectrum_legend.get(),spectrum_file_path.get(),spectrum_bg_file_path.get(),ref_file_path.get(),ref_bg_file_path.get(),spectrum_intTime.get(),ref_intTime.get(),delimiter.get(),rowskip.get(),mode,spectrum2_file_path.get(),spectrum2_bg_file_path.get(),ref2_file_path.get(),ref2_bg_file_path.get(),spectrum2_intTime.get(),ref2_intTime.get()))
+    import_btn.grid(column=6,row=10,columnspan=1,rowspan=1,sticky='nsew')
 
-    configGridDim(top,7,9)
+    configGridDim(top,7,11)
 
 
 def on_checkbox_change(checkbox_value, checkbox_var):
@@ -276,6 +336,57 @@ def open_new_fit_window(Master,mode):
 
     configGridDim(top,7,9)
 
+def save_settings(Master,destroy,mode,wdir,title,x,y):
+    global graph_settings
+    global working_dir
+
+    working_dir = wdir
+
+    graph_settings[mode]['title'] = title
+    graph_settings[mode]['x axis title'] = x
+    graph_settings[mode]['y axis title'] = y
+
+    plot_trend(Master,mode)
+    destroy.destroy()
+
+
+def open_settings_window(Master,mode):
+    top= Toplevel(Master)
+    top.geometry("800x300")
+    top.title("Import Trend")
+
+    working_dir = StringVar()
+    working_dir_label = Label(master=top,text='Global Directory')
+    working_dir_label.grid(column=0,row=0,columnspan=1,rowspan=1,sticky='w')
+    working_dir_entry = Entry(master=top,textvariable=working_dir)
+    working_dir_entry.grid(column=1,row=0,columnspan=3,rowspan=1,sticky='nsew')
+    spectrum_explore_btn = Button(master=top,text = "Browse Directory",command = lambda: working_dir.set(filedialog.askdirectory()))
+    spectrum_explore_btn.grid(column=4,row=0,columnspan=1,rowspan=1,sticky='nsew')
+    
+    graph_title = StringVar()
+    graph_title_label = Label(master=top,text='Graph Title')
+    graph_title_label.grid(column=0,row=2,columnspan=1,rowspan=1,sticky='w')
+    graph_title_entry = Entry(master=top,textvariable=graph_title)
+    graph_title_entry.grid(column=1,row=2,columnspan=3,rowspan=1,sticky='nsew')
+
+    y_title = StringVar()
+    y_title_label = Label(master=top,text='Y Title')
+    y_title_label.grid(column=0,row=3,columnspan=1,rowspan=1,sticky='w')
+    y_title_entry = Entry(master=top,textvariable=y_title)
+    y_title_entry.grid(column=1,row=3,columnspan=3,rowspan=1,sticky='nsew')
+
+    x_title = StringVar()
+    x_title_label = Label(master=top,text='X Title')
+    x_title_label.grid(column=0,row=4,columnspan=1,rowspan=1,sticky='w')
+    x_title_entry = Entry(master=top,textvariable=x_title)
+    x_title_entry.grid(column=1,row=4,columnspan=3,rowspan=1,sticky='nsew')
+
+    cancel_btn = Button(master=top,text = "Cancel",command = lambda:top.destroy())
+    cancel_btn.grid(column=5,row=8,columnspan=1,rowspan=1,sticky='nsew')
+    import_btn = Button(master=top,text = "Save",command = lambda: save_settings(Master,top,mode,working_dir.get(),graph_title.get(),y_title.get(),x_title.get()))
+    import_btn.grid(column=6,row=8,columnspan=1,rowspan=1,sticky='nsew')
+
+    configGridDim(top,7,9)
 
 
 
@@ -293,11 +404,13 @@ raw_tab = ttk.Frame(tabControl)
 trans_tab = ttk.Frame(tabControl)
 ext_tab = ttk.Frame(tabControl)
 tauc_tab = ttk.Frame(tabControl)
+delta_tab = ttk.Frame(tabControl)
 
 tabControl.add(raw_tab, text ='Raw')
 tabControl.add(trans_tab, text ='Transmittance')
 tabControl.add(ext_tab, text ='Extinction')
 tabControl.add(tauc_tab, text ='Tauc')
+tabControl.add(delta_tab, text ='Delta')
 tabControl.pack(expand = 1, fill ="both")
 
 
@@ -307,6 +420,8 @@ raw_import_btn = Button(raw_menubar,text='Import',command=lambda: open_import_tr
 raw_import_btn.pack(side = LEFT,padx=2)
 raw_remove_btn = Button(raw_menubar,text='Remove',command=lambda: open_remove_trend_window(raw_tab,'raw'),width=13)
 raw_remove_btn.pack(side = LEFT,padx=2)
+raw_settings_btn = Button(raw_menubar,text='Settings',command=lambda: open_settings_window(raw_tab,'raw'),width=13)
+raw_settings_btn.pack(side = RIGHT,padx=2)
 raw_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(raw_tab,10,17)
 
@@ -317,6 +432,8 @@ trans_import_btn = Button(trans_menubar,text='Import',command=lambda: open_impor
 trans_import_btn.pack(side = LEFT,padx=2)
 trans_remove_btn = Button(trans_menubar,text='Remove',command=lambda: open_remove_trend_window(trans_tab,'trans'),width=13)
 trans_remove_btn.pack(side = LEFT,padx=2)
+trans_settings_btn = Button(trans_menubar,text='Settings',command=lambda: open_settings_window(trans_tab,'trans'),width=13)
+trans_settings_btn.pack(side = RIGHT,padx=2)
 trans_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(trans_tab,10,17)
 
@@ -326,6 +443,8 @@ ext_import_btn = Button(ext_menubar,text='Import',command=lambda: open_import_tr
 ext_import_btn.pack(side = LEFT,padx=2)
 ext_remove_btn = Button(ext_menubar,text='Remove',command=lambda: open_remove_trend_window(ext_tab,'ext'),width=13)
 ext_remove_btn.pack(side = LEFT,padx=2)
+ext_settings_btn = Button(ext_menubar,text='Settings',command=lambda: open_settings_window(ext_tab,'ext'),width=13)
+ext_settings_btn.pack(side = RIGHT,padx=2)
 ext_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(ext_tab,10,17)
 
@@ -335,12 +454,25 @@ tauc_import_btn = Button(tauc_menubar,text='Import',command=lambda: open_import_
 tauc_import_btn.pack(side = LEFT,padx=2)
 tauc_remove_btn = Button(tauc_menubar,text='Remove',command=lambda: open_remove_trend_window(tauc_tab,'tauc'),width=13)
 tauc_remove_btn.pack(side = LEFT,padx=2)
+tauc_settings_btn = Button(tauc_menubar,text='Settings',command=lambda: open_settings_window(tauc_tab,'tauc'),width=13)
+tauc_settings_btn.pack(side = RIGHT,padx=2)
 tauc_add_fit_btn = Button(tauc_menubar,text='New Fit',command=lambda: open_new_fit_window(tauc_tab,'tauc'),width=13)
 tauc_add_fit_btn.pack(side = LEFT,padx=2)
 tauc_edit_fit_btn = Button(tauc_menubar,text='Edit Fit',command=None,width=13)
 tauc_edit_fit_btn.pack(side = LEFT,padx=2)
 tauc_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
 configGridDim(tauc_tab,10,17)
+
+# Delta Tab
+delta_menubar = ttk.Frame(delta_tab)
+delta_import_btn = Button(delta_menubar,text='Import',command=lambda: open_import_trans_trend_window(delta_tab,'delta'),width=13)
+delta_import_btn.pack(side = LEFT,padx=2)
+delta_remove_btn = Button(delta_menubar,text='Remove',command=lambda: open_remove_trend_window(delta_tab,'delta'),width=13)
+delta_remove_btn.pack(side = LEFT,padx=2)
+delta_settings_btn = Button(delta_menubar,text='Settings',command=lambda: open_settings_window(delta_tab,'delta'),width=13)
+delta_settings_btn.pack(side = RIGHT,padx=2)
+delta_menubar.grid(row=0, column=0, sticky='nsew',columnspan=10)
+configGridDim(delta_tab,10,17)
 
 
 window.mainloop()  
