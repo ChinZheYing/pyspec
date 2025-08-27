@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 
 working_dir = '/'
+global_delim = 'comma'
+global_rowskip = '1'
 
 def configGridDim(frame,col,rw):
     for i in range(col):
@@ -25,6 +27,11 @@ files = {'raw':[],'trans':[],'ext':[],'tauc':[],'delta':[]}
 
 def import_trend(destroy,Master,legend,spectrum,spectrumbg,ref,refbg,specint,refint,delim,skip,mode,spectrum2,spectrum2bg,ref2,ref2bg,spec2int,ref2int):
     global files
+    global global_delim
+    global global_rowskip
+
+    global_delim = delim
+    global_rowskip = skip
 
     if legend == '':
         legend = spectrum
@@ -111,6 +118,9 @@ def plot_trend(Master,mode):
     toolbarframe.grid(row=16, column=0, sticky='nsew',columnspan=10)
 
 def open_import_trans_trend_window(Master,mode):
+    global global_delim
+    global global_rowskip
+    
     top= Toplevel(Master)
     top.geometry("800x300")
     top.title("Import Trend")
@@ -222,14 +232,14 @@ def open_import_trans_trend_window(Master,mode):
         ref2_bg_explore_btn = Button(master=top,text = "Browse Files",command = lambda: ref2_bg_file_path.set(browseFiles(top)))
         ref2_bg_explore_btn.grid(column=4,row=8,columnspan=1,rowspan=1,sticky='nsew')
     
-    delimiter.set('comma')
+    delimiter.set(global_delim)
     delimiter_label = Label(master=top,text='Delimiter:')
     delimiter_label.grid(column=0,row=9,columnspan=1,rowspan=1,sticky='w')
     delimiter_combo = ttk.Combobox(master=top,textvariable=delimiter)
     delimiter_combo['values'] = ('comma','whitespace')
     delimiter_combo.grid(column=1,row=9,columnspan=1,rowspan=1,sticky='w')
 
-    rowskip.set('1')
+    rowskip.set(global_rowskip)
     rowskip_label = Label(master=top,text='Row skips:')
     rowskip_label.grid(column=2,row=9,columnspan=1,rowspan=1,sticky='E')
     rowskip_entry = Entry(master=top,textvariable=rowskip)
